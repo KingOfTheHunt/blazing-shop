@@ -1,0 +1,43 @@
+@page "/products/delete/{id:int}"
+@rendermode InteractiveServer
+@using BlazingShop.Models
+@using BlazingShop.Repositories
+@inject ProductRepository ProductRepo
+@inject NavigationManager NavManager
+
+<PageTitle>Deletar</PageTitle>
+<h1>Deletar @_model.Title</h1>
+
+<EditForm Model="_model" OnValidSubmit="@HandleSubmit">
+    <div class="container">
+        <div class="mb-3">
+            <label for="title" class="form-label">Título</label>
+            <InputText type="text" id="title" readonly @bind-Value="_model.Title" class="form-control"/>
+        </div>
+        <div class="mb-3">
+            <label for="price" class="form-label">Preço</label>
+            <InputNumber type="number" id="price" readonly @bind-Value="_model.Price" class="form-control"/>
+        </div>
+        <div class="mb-3">
+            <button type="submit" class="btn btn-danger">Deletar</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    private Product _model = new();
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _model = await ProductRepo.GetProductWithCategoryByIdAsync(Id);
+    }
+
+    async Task HandleSubmit()
+    {
+        await ProductRepo.RemoveAsync(_model);
+        NavManager.NavigateTo("/products");
+    }
+}

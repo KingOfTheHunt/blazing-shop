@@ -1,0 +1,79 @@
+@page "/products/edit/{id:int}"
+@rendermode InteractiveServer
+@using BlazingShop.Models
+@using BlazingShop.Repositories
+@inject CategoryRepository CategoryRepo
+@inject ProductRepository ProductRepo
+@inject NavigationManager NavManager
+
+<PageTitle>Edição</PageTitle>
+<h1>@_model.Title</h1>
+
+<EditForm Model="_model" OnValidSubmit="@Submit">
+    <div class="container">
+        <InputNumber type="number" id="id" @bind-Value="_model.Id" hidden/>
+        <div class="mb-3">
+            <label for="title" class="form-label">Título</label>
+            <InputText type="text" id="title" class="form-control" @bind-Value="_model.Title"/>
+        </div>
+        <div class="mb-3">
+            <label for="price" class="form-label">Preço</label>
+            <InputNumber type="number" id="price" class="form-control" @bind-Value="_model.Price"/>
+        </div>
+        <div class="mb-3">
+            <label for="categoryId" class="form-label">Categoria</label>
+            <InputSelect id="categoryId" @bind-Value="_model.CategoryId" class="form-control">
+                @foreach (var category in _categories)
+                {
+                    <option value="@category.Id">@category.Title</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="mb-3">
+            <button type="submit" class="btn btn-success">Alterar</button>
+        </div>
+        
+        @if (string.IsNullOrEmpty(_errorMessage) == false)
+        {
+            <div class="alert alert-danger">
+                @_errorMessage
+            </div>
+        }
+    </div>
+</EditForm>
+
+
+@code {
+    private Product _model = new();
+    private List<Category> _categories = [];
+    private string? _errorMessage = null;
+    
+    [Parameter] public int Id { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = await CategoryRepo.GetCategoriesAsync();
+        _model = await ProductRepo.GetProductByIdAsync(Id);
+    }
+
+    async Task Submit()
+    {
+        try
+        {
+            var product = await ProductRepo.GetProductByIdAsync(Id) ?? throw new Exception("Produto não encontrado.");
+            product.Id = _model.Id;
+            product.Title = _model.Title;
+            product.Price = _model.Price;
+            product.CategoryId = _model.CategoryId;
+
+            await ProductRepo.UpdateAsync(product);
+         
+            NavManager.NavigateTo("/products");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+    }
+
+}

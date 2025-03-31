@@ -1,0 +1,78 @@
+@page "/products/create"
+<!-- É necessário informar o rendermode InteractiveServer para habilitar a validação do lado do cliente. -->
+@rendermode InteractiveServer
+@using BlazingShop.Models
+@using BlazingShop.Repositories
+<!-- Injetando a dependência ao componente. -->
+@inject CategoryRepository CategoryRepo
+@inject ProductRepository ProductRepo
+@inject NavigationManager NavManager
+
+<PageTitle>Criação de produto</PageTitle>
+
+<h1>Create</h1>
+
+<!-- 
+    Tag helper do blazor que facilita a criação de formulários.
+    A propriedade Model faz a ligação entre o objeto e o formulário. 
+-->
+<EditForm Model="_model" OnValidSubmit="@HandleSubmit">
+    <div class="container">
+        <div class="mb-3">
+            <label for="title" class="form-label">Título</label>
+            <InputText class="form-control" type="text" id="title" @bind-Value="_model.Title"/>
+        </div>
+        <div class="mb-3">
+            <label for="price" class="form-label">Preço</label>
+            <InputNumber class="form-control" type="number" id="price" @bind-Value="_model.Price"/>
+        </div>
+        <div class="mb-3">
+            <label for="categoryId" class="form-label">Categoria</label>
+            <InputSelect class="form-control" id="categoryId" @bind-Value="_model.CategoryId">
+                @foreach (var category in _categories)
+                {
+                    <option value="@category.Id">@category.Title</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="mb-3">
+            <button type="submit" class="btn btn-success">Salvar</button>
+        </div>
+    </div>
+    <DataAnnotationsValidator/>
+    <ValidationSummary/>
+    
+    @if (string.IsNullOrEmpty(_errorMessage) == false)
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+    
+</EditForm>
+
+@code {
+    private readonly Product _model = new();
+    private List<Category> _categories = [];
+    private string? _errorMessage = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = await CategoryRepo.GetCategoriesAsync();
+        _model.CategoryId = _categories[0].Id;
+    }
+
+    async Task HandleSubmit()
+    {
+        try
+        {
+            await ProductRepo.SaveAsync(_model);
+            NavManager.NavigateTo("/products");
+        }
+        catch
+        {
+            _errorMessage = "Falha ao persistir os dados no banco.";
+        }
+    }
+
+}
